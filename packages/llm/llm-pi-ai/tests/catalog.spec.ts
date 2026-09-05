@@ -526,6 +526,30 @@ describe('catalog routes with per-model configuration', () => {
     expect(resolved.get('opencode')?.piProvider.baseUrl).toBeUndefined()
   })
 
+  it('inherits Muse Spark 1.3 from the OpenCode catalog', () => {
+    const resolved = resolveProfiles({ opencode: {} })
+    const models = resolved.get('opencode')?.piProvider.getModels() ?? []
+
+    expect(models.filter(model => model.id.startsWith('muse-spark-1.3'))).toMatchObject([
+      {
+        id: 'muse-spark-1.3',
+        name: 'Muse Spark 1.3',
+        api: 'openai-responses',
+        input: ['text', 'image'],
+        contextWindow: 1_048_576,
+        maxTokens: 131_072,
+      },
+      {
+        id: 'muse-spark-1.3-contributor-free',
+        name: 'Muse Spark 1.3 Free',
+        api: 'openai-responses',
+        input: ['text', 'image'],
+        contextWindow: 1_048_576,
+        maxTokens: 131_072,
+      },
+    ])
+  })
+
   it('repoints a catalog route at another wire protocol without restating its endpoint', () => {
     const resolved = resolveProfiles({ openai: { api: 'openai-completions' } })
     const models = resolved.get('openai')?.piProvider.getModels() ?? []
@@ -795,19 +819,19 @@ describe('compat switches', () => {
   })
 
   it('skips models of other protocols on a mixed route instead of failing them', () => {
-    // xai ships both completions and responses models, so a route-level switch
-    // must land on the former without invalidating the latter.
-    const catalog = getBuiltinModels('xai') as readonly Model<Api>[]
+    // OpenCode ships both completions and responses models, so a route-level
+    // switch must land on the former without invalidating the latter.
+    const catalog = getBuiltinModels('opencode') as readonly Model<Api>[]
     const completions = catalog.find(model => model.api === 'openai-completions')
     const responses = catalog.find(model => model.api === 'openai-responses')
-    if (completions === undefined || responses === undefined) throw new Error('xai no longer ships a mixed catalog')
+    if (completions === undefined || responses === undefined) throw new Error('opencode no longer ships a mixed catalog')
 
     const models = modelsOf({
-      xai: {
+      opencode: {
         compat: { supportsReasoningEffort: false },
         models: [{ id: completions.id }, { id: responses.id }],
       },
-    }, 'xai')
+    }, 'opencode')
 
     expect((models.get(completions.id)?.compat as OpenAICompletionsCompat).supportsReasoningEffort).toBe(false)
     expect(models.get(responses.id)?.compat).toEqual(responses.compat)
@@ -851,12 +875,15 @@ describe('compat switches', () => {
       'acme-responses': {
         api: 'openai-responses',
         baseURL: 'https://acme.test',
-        compat: { supportsDeveloperRole: false },
+        compat: { supportsDeveloperRole: false, supportsMaxOutputTokens: false },
         models: [{ id: 'acme-r', reasoningEfforts: { off: null, high: 'high' } }],
       },
     }, 'acme-responses')
 
-    expect(models.get('acme-r')?.compat).toEqual({ supportsDeveloperRole: false })
+    expect(models.get('acme-r')?.compat).toEqual({
+      supportsDeveloperRole: false,
+      supportsMaxOutputTokens: false,
+    })
   })
 
   it('carries an anthropic-only switch onto an anthropic-messages route', () => {
@@ -876,18 +903,18 @@ describe('compat switches', () => {
   })
 
   it('lands each route switch only on the models whose protocol declares it', () => {
-    const catalog = getBuiltinModels('xai') as readonly Model<Api>[]
+    const catalog = getBuiltinModels('opencode') as readonly Model<Api>[]
     const completions = catalog.find(model => model.api === 'openai-completions')
     const responses = catalog.find(model => model.api === 'openai-responses')
-    if (completions === undefined || responses === undefined) throw new Error('xai no longer ships a mixed catalog')
+    if (completions === undefined || responses === undefined) throw new Error('opencode no longer ships a mixed catalog')
 
     const models = modelsOf({
-      xai: {
+      opencode: {
         // Both protocols take the first switch; only completions takes the second.
         compat: { supportsDeveloperRole: false, thinkingFormat: 'openai' },
         models: [{ id: completions.id }, { id: responses.id }],
       },
-    }, 'xai')
+    }, 'opencode')
 
     const onCompletions = models.get(completions.id)?.compat as OpenAICompletionsCompat
     expect(onCompletions.supportsDeveloperRole).toBe(false)
@@ -929,8 +956,12 @@ describe('compat switches', () => {
           compat: {
             supportsFinishReason: false,
             thinkingFormat: 'baseten',
-            chatTemplateArgs: { enable_thinking: { $var: 'thinking.enabled' } },
-            supportsThinkingTokenBudget: true,
+            chatTemplateArgs: {
+              enable_thinking: { $var: 'thinking.enabled' },
+              thinking_budget: { $var: 'thinking.budget' },
+            },
+            thinkingTokenBudgetField: 'thinking_budget',
+            vllmPriority: -10,
           },
         }],
       },
@@ -939,8 +970,12 @@ describe('compat switches', () => {
     expect(models.get('reasoning-local')?.compat).toEqual({
       supportsFinishReason: false,
       thinkingFormat: 'baseten',
-      chatTemplateArgs: { enable_thinking: { $var: 'thinking.enabled' } },
-      supportsThinkingTokenBudget: true,
+      chatTemplateArgs: {
+        enable_thinking: { $var: 'thinking.enabled' },
+        thinking_budget: { $var: 'thinking.budget' },
+      },
+      thinkingTokenBudgetField: 'thinking_budget',
+      vllmPriority: -10,
     })
   })
 

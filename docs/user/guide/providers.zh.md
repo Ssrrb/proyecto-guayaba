@@ -14,7 +14,7 @@
 
 ## 添加内置提供方
 
-选择**添加提供方**，选取 dsh 自带的提供方；列表显示的是提供方 id，例如 `anthropic`、`openai`、Kimi 对应的 `moonshotai`、GLM 对应的 `zai`。输入其 API 密钥并保存。已安装目录会提供端点、协议和模型列表。
+选择**添加提供方**，选取 dsh 自带的提供方；列表显示的是提供方 id，例如 `anthropic`、`openai`、`opencode`、Kimi 对应的 `moonshotai`、GLM 对应的 `zai`。输入其 API 密钥并保存。已安装目录会提供端点、协议和模型列表；OpenCode 包含 Muse Spark 1.3 与 Muse Spark 1.3 Free。
 
 通过 OAuth 登录的提供方（例如 Codex）暂不支持。
 

@@ -14,7 +14,7 @@ Keys are write-only. The page receives a redacted descriptor after saving, never
 
 ## Add a built-in provider
 
-Choose **Add provider** and pick a provider dsh ships with; the list shows provider ids such as `anthropic`, `openai`, `moonshotai` for Kimi, or `zai` for GLM. Enter its API key and save. The installed catalog supplies the endpoint, protocol, and model list.
+Choose **Add provider** and pick a provider dsh ships with; the list shows provider ids such as `anthropic`, `openai`, `opencode`, `moonshotai` for Kimi, or `zai` for GLM. Enter its API key and save. The installed catalog supplies the endpoint, protocol, and model list; OpenCode includes Muse Spark 1.3 and Muse Spark 1.3 Free.
 
 Providers that sign in with OAuth, such as Codex, are not supported here yet.
 
